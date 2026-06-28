@@ -11,7 +11,7 @@
         font-family: Arial, sans-serif;
       }
       #blocklyDiv {
-        height: calc(100% - 120px);
+        height: calc(100% - 160px);
         width: 100%;
       }
       #controls {
@@ -20,7 +20,7 @@
         background: #f0f0f0;
         border-bottom: 1px solid #ccc;
       }
-      #runButton {
+      #runButton, #loadTemplateButton {
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
@@ -28,7 +28,7 @@
         color: white;
         border: none;
         border-radius: 4px;
-        margin-right: 20px;
+        margin: 5px;
       }
       #scaleSlider {
         width: 200px;
@@ -48,6 +48,11 @@
     <div id="controls">
       <h1>Blockly with Categories</h1>
       <button id="runButton">Run Code</button>
+      <select id="templateSelect">
+        <option value="prime">Prime Checker</option>
+        <option value="hello">Hello World</option>
+      </select>
+      <button id="loadTemplateButton">Load Template</button>
       <label>
         Scale:
         <input id="scaleSlider" type="range" min="0.3" max="2" step="0.1" value="0.7">
@@ -81,6 +86,7 @@
         <block type="math_trig"></block>
         <block type="math_constant"></block>
         <block type="math_number_property"></block>
+        <block type="math_is_prime"></block>
       </category>
       <category name="Text" colour="160">
         <block type="text"></block>
@@ -94,44 +100,64 @@
         <block type="text_trim"></block>
         <block type="text_print"></block>
         <block type="text_reverse"></block>
-        <block type="text_67"></block> <!-- new block -->
+        <block type="text_67"></block>
       </category>
       <category name="Variables" custom="VARIABLE" colour="330"></category>
       <category name="Functions" custom="PROCEDURE" colour="290"></category>
     </xml>
 
     <script>
-      // Define the 67 block BEFORE injection
-      Blockly.common.defineBlocksWithJsonArray([{
-        "type": "text_67",
-        "message0": "67",
-        "output": "String",
-        "colour": 160,
-        "tooltip": "67",
-        "helpUrl": ""
-      }]);
+      // Custom blocks
+      Blockly.common.defineBlocksWithJsonArray([
+        {
+          "type": "text_67",
+          "message0": "67 block",
+          "output": "String",
+          "colour": 160,
+          "tooltip": "Returns a long string of A's",
+          "helpUrl": ""
+        },
+        {
+          "type": "math_is_prime",
+          "message0": "%1 is prime",
+          "args0": [
+            { "type": "input_value", "name": "NUM", "check": "Number" }
+          ],
+          "output": "Boolean",
+          "colour": 230,
+          "tooltip": "Returns true if the number is prime.",
+          "helpUrl": ""
+        }
+      ]);
 
       Blockly.JavaScript['text_67'] = function(block) {
         const code = `"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`;
         return [code, Blockly.JavaScript.ORDER_ATOMIC];
       };
 
-      // Inject Blockly with smaller scale
+      Blockly.JavaScript['math_is_prime'] = function(block) {
+        const num = Blockly.JavaScript.valueToCode(block, 'NUM', Blockly.JavaScript.ORDER_NONE) || '0';
+        const code = `
+          (function(n){
+            if(n < 2) return false;
+            for(let i = 2; i <= Math.sqrt(n); i++){
+              if(n % i === 0) return false;
+            }
+            return true;
+          })(${num})
+        `;
+        return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+      };
+
+      // Inject Blockly
       const workspace = Blockly.inject('blocklyDiv', {
         toolbox: document.getElementById('toolbox'),
         renderer: 'zelos',
         theme: Blockly.Themes.Classic,
-        zoom: {
-          controls: true,
-          wheel: true,
-          startScale: 0.7,
-          maxScale: 2,
-          minScale: 0.3,
-          scaleSpeed: 1.2
-        }
+        zoom: { controls: true, wheel: true, startScale: 0.7 }
       });
 
-      // Run Code button logic
+      // Run Code
       document.getElementById('runButton').addEventListener('click', () => {
         const code = Blockly.JavaScript.workspaceToCode(workspace);
         try {
@@ -142,11 +168,56 @@
         }
       });
 
-      // Scale slider logic
+      // Scale slider
       document.getElementById('scaleSlider').addEventListener('input', (e) => {
         const scale = parseFloat(e.target.value);
         workspace.setScale(scale);
         workspace.resizeContents();
+      });
+
+      // Templates
+      const templates = {
+        prime: `
+          <xml xmlns="https://developers.google.com/blockly/xml">
+            <block type="controls_for" x="20" y="20">
+              <field name="VAR">i</field>
+              <value name="FROM"><shadow type="math_number"><field name="NUM">2</field></shadow></value>
+              <value name="TO"><shadow type="math_number"><field name="NUM">20</field></shadow></value>
+              <value name="BY"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
+              <statement name="DO">
+                <block type="controls_if">
+                  <value name="IF0">
+                    <block type="math_is_prime">
+                      <value name="NUM"><block type="variables_get"><field name="VAR">i</field></block></value>
+                    </block>
+                  </value>
+                  <statement name="DO0">
+                    <block type="text_print">
+                      <value name="TEXT"><shadow type="text"><field name="TEXT">prime</field></shadow></value>
+                    </block>
+                  </statement>
+                </block>
+              </statement>
+            </block>
+          </xml>
+        `,
+        hello: `
+          <xml xmlns="https://developers.google.com/blockly/xml">
+            <block type="text_print" x="20" y="20">
+              <value name="TEXT">
+                <shadow type="text"><field name="TEXT">Hello World!</field></shadow>
+              </value>
+            </block>
+          </xml>
+        `
+      };
+
+      // Load template button
+      document.getElementById('loadTemplateButton').addEventListener('click', () => {
+        const selected = document.getElementById('templateSelect').value;
+        const xml = Blockly.utils.xml.textToDom(templates[selected]);
+        workspace.clear();
+        Blockly.Xml.domToWorkspace(xml, workspace);
       });
     </script>
   </body>
