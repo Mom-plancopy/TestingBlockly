@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TestingBlockly</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <style>
+      #blocklyDiv {
+        height: 480px;
+        width: 600px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      #runButton {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #output {
+        margin: 20px auto;
+        width: 600px;
+        min-height: 50px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+        background: #f9f9f9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Blockly with Custom Block</h1>
+    <div id="blocklyDiv"></div>
+
+    <!-- Toolbox -->
+    <xml id="toolbox" style="display:none">
+      <block type="text"></block>
+      <block type="text_print"></block>
+      <block type="string_length"></block>
+    </xml>
+
+    <!-- Run Code button -->
+    <button id="runButton">Run Code</button>
+    <div id="output"></div>
+
+    <script>
+      // Inject Blockly
+      const workspace = Blockly.inject('blocklyDiv', {
+        toolbox: document.getElementById('toolbox')
+      });
+
+      // Define the custom block directly in HTML
+      Blockly.common.defineBlocksWithJsonArray([{
+        "type": "string_length",
+        "message0": "length of %1",
+        "args0": [
+          {
+            "type": "input_value",
+            "name": "VALUE",
+            "check": "String"
+          }
+        ],
+        "output": "Number",
+        "colour": 160,
+        "tooltip": "Returns number of letters in the provided text.",
+        "helpUrl": "http://www.w3schools.com/jsref/jsref_length_string.asp"
+      }]);
+
+      // Define the JavaScript generator
+      Blockly.JavaScript['string_length'] = function(block) {
+        var value = Blockly.JavaScript.valueToCode(block, 'VALUE', Blockly.JavaScript.ORDER_MEMBER) || "''";
+        return [value + '.length', Blockly.JavaScript.ORDER_MEMBER];
+      };
+
+      // Run Code button logic
+      document.getElementById('runButton').addEventListener('click', () => {
+        const code = Blockly.JavaScript.workspaceToCode(workspace);
+        try {
+          const result = eval(code);
+          document.getElementById('output').innerText = "Result: " + result;
+        } catch (e) {
+          document.getElementById('output').innerText = "Error: " + e;
+        }
+      });
+    </script>
+  </body>
+</html>
