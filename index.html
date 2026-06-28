@@ -11,7 +11,7 @@
         font-family: Arial, sans-serif;
       }
       #blocklyDiv {
-        height: calc(100% - 160px);
+        height: calc(100% - 180px);
         width: 100%;
       }
       #controls {
@@ -20,7 +20,7 @@
         background: #f0f0f0;
         border-bottom: 1px solid #ccc;
       }
-      #runButton, #loadTemplateButton {
+      #runButton, #loadTemplateButton, #exportTemplateButton {
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
@@ -42,6 +42,16 @@
         min-height: 40px;
         text-align: left;
       }
+      #exportArea {
+        width: 90%;
+        margin: 10px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background: #eef;
+        min-height: 40px;
+        text-align: left;
+        white-space: pre-wrap;
+      }
     </style>
   </head>
   <body>
@@ -53,6 +63,7 @@
         <option value="hello">Hello World</option>
       </select>
       <button id="loadTemplateButton">Load Template</button>
+      <button id="exportTemplateButton">Export Template</button>
       <label>
         Scale:
         <input id="scaleSlider" type="range" min="0.3" max="2" step="0.1" value="0.7">
@@ -61,6 +72,7 @@
 
     <div id="blocklyDiv"></div>
     <div id="output"></div>
+    <div id="exportArea"></div>
 
     <!-- Toolbox -->
     <xml id="toolbox" style="display:none">
@@ -177,30 +189,7 @@
 
       // Templates
       const templates = {
-        prime: `
-          <xml xmlns="https://developers.google.com/blockly/xml">
-            <block type="controls_for" x="20" y="20">
-              <field name="VAR">i</field>
-              <value name="FROM"><shadow type="math_number"><field name="NUM">2</field></shadow></value>
-              <value name="TO"><shadow type="math_number"><field name="NUM">20</field></shadow></value>
-              <value name="BY"><shadow type="math_number"><field name="NUM">1</field></shadow></value>
-              <statement name="DO">
-                <block type="controls_if">
-                  <value name="IF0">
-                    <block type="math_is_prime">
-                      <value name="NUM"><block type="variables_get"><field name="VAR">i</field></block></value>
-                    </block>
-                  </value>
-                  <statement name="DO0">
-                    <block type="text_print">
-                      <value name="TEXT"><shadow type="text"><field name="TEXT">prime</field></shadow></value>
-                    </block>
-                  </statement>
-                </block>
-              </statement>
-            </block>
-          </xml>
-        `,
+        prime: `<xml xmlns="https://developers.google.com/blockly/xml"></xml>`,
         hello: `
           <xml xmlns="https://developers.google.com/blockly/xml">
             <block type="text_print" x="20" y="20">
@@ -218,6 +207,18 @@
         const xml = Blockly.utils.xml.textToDom(templates[selected]);
         workspace.clear();
         Blockly.Xml.domToWorkspace(xml, workspace);
+      });
+
+      // Export template button with password
+      document.getElementById('exportTemplateButton').addEventListener('click', () => {
+        const password = prompt("Enter password to export:");
+        if (password === "1728") {
+          const xmlDom = Blockly.Xml.workspaceToDom(workspace);
+          const xmlText = Blockly.Xml.domToPrettyText(xmlDom);
+          document.getElementById('exportArea').innerText = xmlText;
+        } else {
+          alert("Incorrect password. Export denied.");
+        }
       });
     </script>
   </body>
