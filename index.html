@@ -4,19 +4,52 @@
     <title>TestingBlockly</title>
     <script src="https://unpkg.com/blockly/blockly.min.js"></script>
     <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
       #blocklyDiv {
-        height: 480px;
-        width: 800px;
+        height: calc(100% - 100px);
+        width: 100%;
+      }
+      #controls {
+        text-align: center;
+        padding: 10px;
+        background: #f0f0f0;
+        border-bottom: 1px solid #ccc;
+      }
+      #runButton {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+      }
+      #output {
+        width: 90%;
+        margin: 10px auto;
+        padding: 10px;
         border: 1px solid #ccc;
-        margin: 20px auto;
+        background: #fafafa;
+        min-height: 40px;
+        text-align: left;
       }
     </style>
   </head>
   <body>
-    <h1>Blockly with Categories</h1>
-    <div id="blocklyDiv"></div>
+    <div id="controls">
+      <h1>Blockly with Categories</h1>
+      <button id="runButton">Run Code</button>
+    </div>
 
-    <!-- Toolbox with categories -->
+    <div id="blocklyDiv"></div>
+    <div id="output"></div>
+
+    <!-- Toolbox -->
     <xml id="toolbox" style="display:none">
       <category name="Logic" colour="210">
         <block type="controls_if"></block>
@@ -52,17 +85,46 @@
         <block type="text_changeCase"></block>
         <block type="text_trim"></block>
         <block type="text_print"></block>
+        <block type="text_reverse"></block>
+        <block type="text_67"></block> <!-- new block -->
       </category>
-      <!-- Variables category (auto‑generated) -->
       <category name="Variables" custom="VARIABLE" colour="330"></category>
-      <!-- Functions category (auto‑generated) -->
       <category name="Functions" custom="PROCEDURE" colour="290"></category>
     </xml>
 
     <script>
-      // Inject Blockly with the toolbox
+      // Inject Blockly
       const workspace = Blockly.inject('blocklyDiv', {
-        toolbox: document.getElementById('toolbox')
+        toolbox: document.getElementById('toolbox'),
+        renderer: 'zelos',
+        theme: Blockly.Themes.Classic
+      });
+
+      // Define the 67 block
+      Blockly.common.defineBlocksWithJsonArray([{
+        "type": "text_67",
+        "message0": "67 block",
+        "output": "String",
+        "colour": 160,
+        "tooltip": "Returns a long string of A's",
+        "helpUrl": ""
+      }]);
+
+      // Generator for the 67 block
+      Blockly.JavaScript['text_67'] = function(block) {
+        const code = `"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`;
+        return [code, Blockly.JavaScript.ORDER_ATOMIC];
+      };
+
+      // Run Code button logic
+      document.getElementById('runButton').addEventListener('click', () => {
+        const code = Blockly.JavaScript.workspaceToCode(workspace);
+        try {
+          const result = eval(code);
+          document.getElementById('output').innerText = 'Result: ' + (result ?? 'No output');
+        } catch (e) {
+          document.getElementById('output').innerText = 'Error: ' + e;
+        }
       });
     </script>
   </body>
