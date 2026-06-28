@@ -44,15 +44,18 @@
         white-space: pre-wrap;
       }
       #exportArea { background: #eef; }
+      /* Make toolbox scrollable like Scratch */
+      .blocklyToolboxDiv {
+        overflow-y: auto !important;
+        max-height: 100% !important;
+      }
     </style>
   </head>
   <body>
     <div id="controls">
       <h1>Blockly with Categories</h1>
       <button id="runButton">Run Code</button>
-      <select id="templateSelect">
-        <option value="hello">Hello World</option>
-      </select>
+      <select id="templateSelect"></select>
       <button id="loadTemplateButton">Load Template</button>
       <button id="exportTemplateButton">Export Template</button>
       <label>
@@ -124,12 +127,14 @@
         return [code, Blockly.JavaScript.ORDER_ATOMIC];
       };
 
-      // Inject Blockly
+      // Inject Blockly with scrollable toolbox
       const workspace = Blockly.inject('blocklyDiv', {
         toolbox: document.getElementById('toolbox'),
         renderer: 'zelos',
         theme: Blockly.Themes.Classic,
-        zoom: { controls: true, wheel: true, startScale: 0.7 }
+        zoom: { controls: true, wheel: true, startScale: 0.7 },
+        horizontalLayout: false,
+        toolboxPosition: 'start'
       });
 
       // Run Code
@@ -150,9 +155,12 @@
         workspace.resizeContents();
       });
 
-      // Template "database"
-      const templates = {
-        hello: `
+      // Template "database" backed by localStorage
+      let templates = JSON.parse(localStorage.getItem("blocklyTemplates") || "{}");
+
+      // Ensure Hello World exists
+      if (!templates.hello) {
+        templates.hello = `
           <xml xmlns="https://developers.google.com/blockly/xml">
             <block type="text_print" x="20" y="20">
               <value name="TEXT">
@@ -160,12 +168,25 @@
               </value>
             </block>
           </xml>
-        `
-      };
+        `;
+      }
+
+      // Populate dropdown
+      const select = document.getElementById('templateSelect');
+      function refreshDropdown() {
+        select.innerHTML = "";
+        Object.keys(templates).forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+      }
+      refreshDropdown();
 
       // Load template
       document.getElementById('loadTemplateButton').addEventListener('click', () => {
-        const selected = document.getElementById('templateSelect').value;
+        const selected = select.value;
         const xml = Blockly.utils.xml.textToDom(templates[selected]);
         workspace.clear();
         Blockly.Xml.domToWorkspace(xml, workspace);
@@ -179,13 +200,9 @@
           if (name) {
             const xmlDom = Blockly.Xml.workspaceToDom(workspace);
             const xmlText = Blockly.Xml.domToPrettyText(xmlDom);
-            templates[name] = xmlText; // save to "database"
-            // Add to dropdown
-            const select = document.getElementById('templateSelect');
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            select.appendChild(option);
+            templates[name] = xmlText;
+            localStorage.setItem("blocklyTemplates", JSON.stringify(templates));
+            refreshDropdown();
             document.getElementById('exportArea').innerText = "Template saved as: " + name + "\n\n" + xmlText;
           }
         } else {
