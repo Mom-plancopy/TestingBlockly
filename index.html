@@ -11,7 +11,7 @@
         font-family: Arial, sans-serif;
       }
       #blocklyDiv {
-        height: calc(100% - 100px);
+        height: calc(100% - 120px);
         width: 100%;
       }
       #controls {
@@ -28,6 +28,10 @@
         color: white;
         border: none;
         border-radius: 4px;
+        margin-right: 20px;
+      }
+      #scaleSlider {
+        width: 200px;
       }
       #output {
         width: 90%;
@@ -44,6 +48,10 @@
     <div id="controls">
       <h1>Blockly with Categories</h1>
       <button id="runButton">Run Code</button>
+      <label>
+        Scale:
+        <input id="scaleSlider" type="range" min="0.3" max="2" step="0.1" value="0.7">
+      </label>
     </div>
 
     <div id="blocklyDiv"></div>
@@ -93,14 +101,7 @@
     </xml>
 
     <script>
-      // Inject Blockly
-      const workspace = Blockly.inject('blocklyDiv', {
-        toolbox: document.getElementById('toolbox'),
-        renderer: 'zelos',
-        theme: Blockly.Themes.Classic
-      });
-
-      // Define the 67 block
+      // Define the 67 block BEFORE injection
       Blockly.common.defineBlocksWithJsonArray([{
         "type": "text_67",
         "message0": "67 block",
@@ -110,11 +111,25 @@
         "helpUrl": ""
       }]);
 
-      // Generator for the 67 block
       Blockly.JavaScript['text_67'] = function(block) {
         const code = `"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`;
         return [code, Blockly.JavaScript.ORDER_ATOMIC];
       };
+
+      // Inject Blockly with smaller scale
+      const workspace = Blockly.inject('blocklyDiv', {
+        toolbox: document.getElementById('toolbox'),
+        renderer: 'zelos',
+        theme: Blockly.Themes.Classic,
+        zoom: {
+          controls: true,
+          wheel: true,
+          startScale: 0.7,
+          maxScale: 2,
+          minScale: 0.3,
+          scaleSpeed: 1.2
+        }
+      });
 
       // Run Code button logic
       document.getElementById('runButton').addEventListener('click', () => {
@@ -125,6 +140,13 @@
         } catch (e) {
           document.getElementById('output').innerText = 'Error: ' + e;
         }
+      });
+
+      // Scale slider logic
+      document.getElementById('scaleSlider').addEventListener('input', (e) => {
+        const scale = parseFloat(e.target.value);
+        workspace.setScale(scale);
+        workspace.resizeContents();
       });
     </script>
   </body>
