@@ -33,7 +33,7 @@
       #scaleSlider {
         width: 200px;
       }
-      #output {
+      #output, #exportArea {
         width: 90%;
         margin: 10px auto;
         padding: 10px;
@@ -41,17 +41,9 @@
         background: #fafafa;
         min-height: 40px;
         text-align: left;
-      }
-      #exportArea {
-        width: 90%;
-        margin: 10px auto;
-        padding: 10px;
-        border: 1px solid #ccc;
-        background: #eef;
-        min-height: 40px;
-        text-align: left;
         white-space: pre-wrap;
       }
+      #exportArea { background: #eef; }
     </style>
   </head>
   <body>
@@ -59,7 +51,6 @@
       <h1>Blockly with Categories</h1>
       <button id="runButton">Run Code</button>
       <select id="templateSelect">
-        <option value="prime">Prime Checker</option>
         <option value="hello">Hello World</option>
       </select>
       <button id="loadTemplateButton">Load Template</button>
@@ -98,7 +89,6 @@
         <block type="math_trig"></block>
         <block type="math_constant"></block>
         <block type="math_number_property"></block>
-        <block type="math_is_prime"></block>
       </category>
       <category name="Text" colour="160">
         <block type="text"></block>
@@ -119,46 +109,19 @@
     </xml>
 
     <script>
-      // Custom blocks
-      Blockly.common.defineBlocksWithJsonArray([
-        {
-          "type": "text_67",
-          "message0": "67 block",
-          "output": "String",
-          "colour": 160,
-          "tooltip": "Returns a long string of A's",
-          "helpUrl": ""
-        },
-        {
-          "type": "math_is_prime",
-          "message0": "%1 is prime",
-          "args0": [
-            { "type": "input_value", "name": "NUM", "check": "Number" }
-          ],
-          "output": "Boolean",
-          "colour": 230,
-          "tooltip": "Returns true if the number is prime.",
-          "helpUrl": ""
-        }
-      ]);
+      // Custom block
+      Blockly.common.defineBlocksWithJsonArray([{
+        "type": "text_67",
+        "message0": "67 block",
+        "output": "String",
+        "colour": 160,
+        "tooltip": "Returns a long string of A's",
+        "helpUrl": ""
+      }]);
 
       Blockly.JavaScript['text_67'] = function(block) {
         const code = `"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"`;
         return [code, Blockly.JavaScript.ORDER_ATOMIC];
-      };
-
-      Blockly.JavaScript['math_is_prime'] = function(block) {
-        const num = Blockly.JavaScript.valueToCode(block, 'NUM', Blockly.JavaScript.ORDER_NONE) || '0';
-        const code = `
-          (function(n){
-            if(n < 2) return false;
-            for(let i = 2; i <= Math.sqrt(n); i++){
-              if(n % i === 0) return false;
-            }
-            return true;
-          })(${num})
-        `;
-        return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
       };
 
       // Inject Blockly
@@ -187,9 +150,8 @@
         workspace.resizeContents();
       });
 
-      // Templates
+      // Template "database"
       const templates = {
-        prime: `<xml xmlns="https://developers.google.com/blockly/xml"></xml>`,
         hello: `
           <xml xmlns="https://developers.google.com/blockly/xml">
             <block type="text_print" x="20" y="20">
@@ -201,7 +163,7 @@
         `
       };
 
-      // Load template button
+      // Load template
       document.getElementById('loadTemplateButton').addEventListener('click', () => {
         const selected = document.getElementById('templateSelect').value;
         const xml = Blockly.utils.xml.textToDom(templates[selected]);
@@ -209,13 +171,23 @@
         Blockly.Xml.domToWorkspace(xml, workspace);
       });
 
-      // Export template button with password
+      // Export template with password and rename
       document.getElementById('exportTemplateButton').addEventListener('click', () => {
         const password = prompt("Enter password to export:");
         if (password === "1728") {
-          const xmlDom = Blockly.Xml.workspaceToDom(workspace);
-          const xmlText = Blockly.Xml.domToPrettyText(xmlDom);
-          document.getElementById('exportArea').innerText = xmlText;
+          const name = prompt("Enter a name for this template:");
+          if (name) {
+            const xmlDom = Blockly.Xml.workspaceToDom(workspace);
+            const xmlText = Blockly.Xml.domToPrettyText(xmlDom);
+            templates[name] = xmlText; // save to "database"
+            // Add to dropdown
+            const select = document.getElementById('templateSelect');
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+            document.getElementById('exportArea').innerText = "Template saved as: " + name + "\n\n" + xmlText;
+          }
         } else {
           alert("Incorrect password. Export denied.");
         }
